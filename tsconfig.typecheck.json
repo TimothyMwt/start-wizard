@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@timothymwt/start-wizard-core": ["packages/start-wizard-core/src/index.ts"],
+      "@timothymwt/start-wizard-core/*": ["packages/start-wizard-core/src/*"],
+      "@timothymwt/start-wizard-next": ["packages/start-wizard-next/src/index.ts"],
+      "@timothymwt/start-wizard-next/*": ["packages/start-wizard-next/src/*"],
+      "@timothymwt/start-wizard-expo": ["packages/start-wizard-expo/src/index.ts"],
+      "@timothymwt/start-wizard-expo/*": ["packages/start-wizard-expo/src/*"]
+    }
+  }
+}
+
+

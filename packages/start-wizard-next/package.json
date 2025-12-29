@@ -1,0 +1,28 @@
+{
+  "name": "@timothymwt/start-wizard-next",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Next.js adapter helpers for start-wizard.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TimothyMWT/start-wizard.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  }
+}

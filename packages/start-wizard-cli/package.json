@@ -1,0 +1,36 @@
+{
+  "name": "@timothymwt/start-wizard-cli",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Config-driven development startup wizard CLI (installs the start-wizard command).",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TimothyMWT/start-wizard.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "start-wizard": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@timothymwt/start-wizard-core": "0.1.0",
+    "@timothymwt/start-wizard-expo": "0.1.0",
+    "@timothymwt/start-wizard-next": "0.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  }
+}
