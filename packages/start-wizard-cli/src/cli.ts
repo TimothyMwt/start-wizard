@@ -100,7 +100,10 @@ function requireMode(value: unknown): StartWizardRunMode {
   throw new Error(`Invalid mode "${String(value)}". Expected local|dev|prod.`);
 }
 
-async function selectProduct(config: StartWizardConfig, productArg?: string): Promise<StartWizardProduct> {
+async function selectProduct(
+  config: StartWizardConfig,
+  productArg?: string
+): Promise<StartWizardProduct> {
   if (productArg) {
     const product = config.products.find((p) => p.id === productArg);
     if (!product) {
@@ -132,7 +135,10 @@ async function selectProduct(config: StartWizardConfig, productArg?: string): Pr
   return product;
 }
 
-async function selectMode(config: StartWizardConfig, modeArg?: string): Promise<StartWizardRunMode> {
+async function selectMode(
+  config: StartWizardConfig,
+  modeArg?: string
+): Promise<StartWizardRunMode> {
   if (modeArg) return requireMode(modeArg);
 
   if (!isTty()) {
@@ -148,7 +154,10 @@ async function selectMode(config: StartWizardConfig, modeArg?: string): Promise<
   return requireMode(choice.id);
 }
 
-function parseOptionTokens(specs: StartWizardOptionSpec[] | undefined, tokens: string[]): Record<string, unknown> {
+function parseOptionTokens(
+  specs: StartWizardOptionSpec[] | undefined,
+  tokens: string[]
+): Record<string, unknown> {
   if (!specs?.length) {
     if (tokens.length) throw new Error(`Unknown args: ${tokens.join(' ')}`);
     return {};
@@ -183,7 +192,9 @@ function parseOptionTokens(specs: StartWizardOptionSpec[] | undefined, tokens: s
     }
 
     const eqIdx = token.indexOf('=');
-    const flagName = (eqIdx >= 0 ? token.slice(2, eqIdx) : token.slice(2)).trim();
+    const flagName = (
+      eqIdx >= 0 ? token.slice(2, eqIdx) : token.slice(2)
+    ).trim();
     const inlineValue = eqIdx >= 0 ? token.slice(eqIdx + 1) : null;
     const spec = byFlag.get(flagName);
     if (!spec) {
@@ -198,7 +209,10 @@ function parseOptionTokens(specs: StartWizardOptionSpec[] | undefined, tokens: s
         const v = inlineValue.trim().toLowerCase();
         if (v === 'true' || v === '1') values[spec.name] = true;
         else if (v === 'false' || v === '0') values[spec.name] = false;
-        else throw new Error(`Invalid boolean for --${flagName}: "${inlineValue}"`);
+        else
+          throw new Error(
+            `Invalid boolean for --${flagName}: "${inlineValue}"`
+          );
       }
       continue;
     }
@@ -214,7 +228,8 @@ function parseOptionTokens(specs: StartWizardOptionSpec[] | undefined, tokens: s
     }
     if (spec.kind === 'number') {
       const n = Number.parseInt(String(rawValue), 10);
-      if (!Number.isFinite(n)) throw new Error(`Invalid number for --${flagName}: "${rawValue}"`);
+      if (!Number.isFinite(n))
+        throw new Error(`Invalid number for --${flagName}: "${rawValue}"`);
       values[spec.name] = n;
       continue;
     }
@@ -243,13 +258,13 @@ async function fillOptionDefaultsAndPrompts(
     if (values[spec.name] !== undefined) continue;
 
     if (spec.kind === 'boolean') {
-      const v =
-        spec.prompt
-          ? await confirmPrompt({
-              question: spec.prompt.question,
-              defaultValue: spec.prompt.defaultValue ?? spec.defaultValue ?? false,
-            })
-          : spec.defaultValue ?? false;
+      const v = spec.prompt
+        ? await confirmPrompt({
+            question: spec.prompt.question,
+            defaultValue:
+              spec.prompt.defaultValue ?? spec.defaultValue ?? false,
+          })
+        : (spec.defaultValue ?? false);
       values[spec.name] = v;
       continue;
     }
@@ -260,7 +275,8 @@ async function fillOptionDefaultsAndPrompts(
         spec.defaultId ??
         spec.options[spec.prompt?.defaultIndex ?? 0]?.id ??
         spec.options[0]?.id;
-      if (!defaultId) throw new Error(`Invalid select spec for ${productId}.${spec.name}`);
+      if (!defaultId)
+        throw new Error(`Invalid select spec for ${productId}.${spec.name}`);
 
       if (!isTty() && !spec.prompt) {
         values[spec.name] = defaultId;
@@ -276,12 +292,17 @@ async function fillOptionDefaultsAndPrompts(
         options: spec.options.map((o) => ({ id: o.id, label: o.label })),
         defaultIndex:
           spec.prompt?.defaultIndex ??
-          Math.max(0, spec.options.findIndex((o) => o.id === defaultId)),
+          Math.max(
+            0,
+            spec.options.findIndex((o) => o.id === defaultId)
+          ),
       });
       if (!choice) throw new Error('Aborted.');
       values[spec.name] = choice.id;
       if (!allowed.has(choice.id)) {
-        throw new Error(`Invalid value for ${productId}.${spec.name}: "${choice.id}"`);
+        throw new Error(
+          `Invalid value for ${productId}.${spec.name}: "${choice.id}"`
+        );
       }
       continue;
     }
@@ -300,28 +321,36 @@ async function fillOptionDefaultsAndPrompts(
           question: spec.prompt.question,
           defaultValue,
           validate: (value) => {
-            if (spec.required && value.trim() === '') return 'Value is required.';
+            if (spec.required && value.trim() === '')
+              return 'Value is required.';
             return null;
           },
         });
         values[spec.name] = v;
         continue;
       }
-      if (spec.required) throw new Error(`Missing required option: ${productId}.${spec.name}`);
+      if (spec.required)
+        throw new Error(`Missing required option: ${productId}.${spec.name}`);
       values[spec.name] = defaultValue;
       continue;
     }
 
     if (spec.kind === 'number') {
       const defaultValue =
-        spec.prompt?.defaultValue ?? (spec.defaultValue !== undefined ? String(spec.defaultValue) : '');
+        spec.prompt?.defaultValue ??
+        (spec.defaultValue !== undefined ? String(spec.defaultValue) : '');
       if (!isTty()) {
         if (spec.required && defaultValue.trim() === '') {
           throw new Error(`Missing required option: ${productId}.${spec.name}`);
         }
-        const n = defaultValue.trim() === '' ? undefined : Number.parseInt(defaultValue, 10);
+        const n =
+          defaultValue.trim() === ''
+            ? undefined
+            : Number.parseInt(defaultValue, 10);
         if (n !== undefined && (!Number.isFinite(n) || n <= 0)) {
-          throw new Error(`Invalid number default for ${productId}.${spec.name}`);
+          throw new Error(
+            `Invalid number default for ${productId}.${spec.name}`
+          );
         }
         values[spec.name] = n ?? spec.defaultValue;
         continue;
@@ -331,19 +360,25 @@ async function fillOptionDefaultsAndPrompts(
           question: spec.prompt.question,
           defaultValue,
           validate: (value) => {
-            if (spec.required && value.trim() === '') return 'Value is required.';
+            if (spec.required && value.trim() === '')
+              return 'Value is required.';
             const n = Number.parseInt(value, 10);
-            if (!Number.isFinite(n) || n <= 0) return 'Must be a positive number.';
-            if (spec.min !== undefined && n < spec.min) return `Must be >= ${spec.min}.`;
-            if (spec.max !== undefined && n > spec.max) return `Must be <= ${spec.max}.`;
+            if (!Number.isFinite(n) || n <= 0)
+              return 'Must be a positive number.';
+            if (spec.min !== undefined && n < spec.min)
+              return `Must be >= ${spec.min}.`;
+            if (spec.max !== undefined && n > spec.max)
+              return `Must be <= ${spec.max}.`;
             return null;
           },
         });
         values[spec.name] = Number.parseInt(entered, 10);
         continue;
       }
-      if (spec.required) throw new Error(`Missing required option: ${productId}.${spec.name}`);
-      if (spec.defaultValue !== undefined) values[spec.name] = spec.defaultValue;
+      if (spec.required)
+        throw new Error(`Missing required option: ${productId}.${spec.name}`);
+      if (spec.defaultValue !== undefined)
+        values[spec.name] = spec.defaultValue;
       continue;
     }
   }
@@ -364,25 +399,34 @@ async function fillOptionDefaultsAndPrompts(
     }
     if (spec.kind === 'number') {
       const n = Number(v);
-      if (!Number.isFinite(n)) throw new Error(`Invalid number for ${productId}.${spec.name}`);
-      if (spec.min !== undefined && n < spec.min) throw new Error(`${productId}.${spec.name} must be >= ${spec.min}`);
-      if (spec.max !== undefined && n > spec.max) throw new Error(`${productId}.${spec.name} must be <= ${spec.max}`);
+      if (!Number.isFinite(n))
+        throw new Error(`Invalid number for ${productId}.${spec.name}`);
+      if (spec.min !== undefined && n < spec.min)
+        throw new Error(`${productId}.${spec.name} must be >= ${spec.min}`);
+      if (spec.max !== undefined && n > spec.max)
+        throw new Error(`${productId}.${spec.name} must be <= ${spec.max}`);
     }
   }
 
   return values;
 }
 
-function validatePortPlan(plan: StartWizardPortPlanEntry[] | undefined): StartWizardPortPlanEntry[] {
+function validatePortPlan(
+  plan: StartWizardPortPlanEntry[] | undefined
+): StartWizardPortPlanEntry[] {
   if (!plan) return [];
   if (!Array.isArray(plan)) throw new Error('portPlan must return an array.');
   return plan.map((p, i) => {
-    if (!p || typeof p !== 'object') throw new Error(`portPlan[${i}] must be an object.`);
+    if (!p || typeof p !== 'object')
+      throw new Error(`portPlan[${i}] must be an object.`);
     const port = (p as StartWizardPortPlanEntry).port;
     const desiredService = (p as StartWizardPortPlanEntry).desiredService;
-    if (!Number.isFinite(port) || port <= 0) throw new Error(`portPlan[${i}].port must be a positive number.`);
+    if (!Number.isFinite(port) || port <= 0)
+      throw new Error(`portPlan[${i}].port must be a positive number.`);
     if (typeof desiredService !== 'string' || desiredService.trim() === '') {
-      throw new Error(`portPlan[${i}].desiredService must be a non-empty string.`);
+      throw new Error(
+        `portPlan[${i}].desiredService must be a non-empty string.`
+      );
     }
     return p as StartWizardPortPlanEntry;
   });
@@ -391,15 +435,18 @@ function validatePortPlan(plan: StartWizardPortPlanEntry[] | undefined): StartWi
 async function handleLocalStack({
   config,
   baseCtx,
+  stackPorts,
 }: {
   config: StartWizardConfig;
   baseCtx: StartWizardContext;
+  stackPorts: StartWizardPortPlanEntry[];
 }): Promise<{ ignorePorts: Set<number> }> {
   if (baseCtx.mode !== 'local') return { ignorePorts: new Set() };
   if (!config.localStack?.start) return { ignorePorts: new Set() };
 
-  const stackPorts = validatePortPlan(config.localStack.ports?.(baseCtx));
-  const ignorePorts = new Set<number>();
+  // In local mode, localStack owns these ports. We should never treat them as
+  // product-level conflicts after the stack is started/reused.
+  const ignorePorts = new Set<number>(stackPorts.map((p) => p.port));
 
   const anyUp = await (async () => {
     for (const entry of stackPorts) {
@@ -410,7 +457,8 @@ async function handleLocalStack({
 
   if (anyUp && isTty()) {
     const choice = await selectPrompt({
-      title: 'Local backend services detected (ports in use). What do you want to do?',
+      title:
+        'Local backend services detected (ports in use). What do you want to do?',
       options: [
         { id: 'reuse', label: 'Reuse running local services' },
         {
@@ -422,13 +470,20 @@ async function handleLocalStack({
     });
     if (!choice) throw new Error('Aborted.');
     if (choice.id === 'reuse') {
-      for (const p of stackPorts) ignorePorts.add(p.port);
       return { ignorePorts };
     }
     if (choice.id === 'restart') {
       if (config.localStack.stop) {
         await config.localStack.stop(baseCtx);
       }
+      // Fail-fast: if any localStack ports are still held after stop, resolve
+      // them *before* starting anything that will spam logs to the TTY.
+      const conflictsAfterStop = await collectPortConflicts(stackPorts);
+      await resolvePortConflictsInteractively({
+        conflicts: conflictsAfterStop,
+        kill: baseCtx.args.kill,
+        yes: baseCtx.args.yes,
+      });
       await config.localStack.start(baseCtx);
       return { ignorePorts };
     }
@@ -436,31 +491,44 @@ async function handleLocalStack({
 
   if (anyUp && !isTty()) {
     // Non-interactive: default to reuse to avoid accidental kills.
-    for (const p of stackPorts) ignorePorts.add(p.port);
     return { ignorePorts };
   }
 
   const shouldStart = baseCtx.args.yes
     ? true
     : await confirmPrompt({
-        question: 'No local backend detected. Start required local services now?',
+        question:
+          'No local backend detected. Start required local services now?',
         defaultValue: true,
       });
   if (!shouldStart) throw new Error('Aborted (local backend not started).');
+
+  // Resolve any unexpected conflicts *before* starting the stack (so the user
+  // can actually interact with prompts without concurrent log spam).
+  const conflictsBeforeStart = await collectPortConflicts(stackPorts);
+  await resolvePortConflictsInteractively({
+    conflicts: conflictsBeforeStart,
+    kill: baseCtx.args.kill,
+    yes: baseCtx.args.yes,
+  });
 
   await config.localStack.start(baseCtx);
   return { ignorePorts };
 }
 
-async function main(): Promise<void> {
-  const argv = process.argv.slice(2);
+export async function runStartWizard({
+  argv,
+  cwd,
+}: {
+  argv: string[];
+  cwd: string;
+}): Promise<void> {
   const parsed = parseCommonCliArgs(argv);
   if (parsed.help) {
     printHelp();
     return;
   }
 
-  const cwd = process.cwd();
   const { repoRoot, configPath } = resolveConfigPath({
     cwd,
     configPathArg: parsed.configPath,
@@ -483,7 +551,10 @@ async function main(): Promise<void> {
     yes: parsed.yes,
   });
 
-  const optionValuesFromFlags = parseOptionTokens(product.options, parsed.remaining);
+  const optionValuesFromFlags = parseOptionTokens(
+    product.options,
+    parsed.remaining
+  );
   const options = await fillOptionDefaultsAndPrompts(
     product.options,
     optionValuesFromFlags,
@@ -505,24 +576,32 @@ async function main(): Promise<void> {
     passThroughArgs: parsed.passThroughArgs,
   };
 
-  const { ignorePorts } = await handleLocalStack({ config, baseCtx });
+  const stackPorts =
+    baseCtx.mode === 'local'
+      ? validatePortPlan(config.localStack?.ports?.(baseCtx))
+      : [];
+  const stackIgnorePorts = new Set<number>(stackPorts.map((p) => p.port));
 
-  const portPlan = validatePortPlan(product.portPlan?.(baseCtx)).filter(
-    (p) => !ignorePorts.has(p.port)
+  // IMPORTANT: resolve product port conflicts *before* starting the local stack,
+  // otherwise background logs will corrupt interactive prompts.
+  const productPortPlan = validatePortPlan(product.portPlan?.(baseCtx)).filter(
+    (p) => !(baseCtx.mode === 'local' && stackIgnorePorts.has(p.port))
   );
-  const conflicts = await collectPortConflicts(portPlan);
+  const productConflicts = await collectPortConflicts(productPortPlan);
   await resolvePortConflictsInteractively({
-    conflicts,
+    conflicts: productConflicts,
     kill: parsed.kill,
     yes: parsed.yes,
   });
 
   // Apply flexible port changes back into ctx.options when mapped.
-  for (const conflict of conflicts) {
+  for (const conflict of productConflicts) {
     if (Number.isFinite(conflict.newPort) && conflict.optionName) {
       baseCtx.options[conflict.optionName] = conflict.newPort;
     }
   }
+
+  await handleLocalStack({ config, baseCtx, stackPorts });
 
   console.log('');
   console.log('Starting…');
@@ -534,9 +613,24 @@ async function main(): Promise<void> {
   await product.start(baseCtx);
 }
 
-main().catch((err) => {
-  console.error(`\n❌ start-wizard failed: ${err?.message ?? err}\n`);
-  process.exit(1);
-});
+async function main(): Promise<void> {
+  await runStartWizard({ argv: process.argv.slice(2), cwd: process.cwd() });
+}
 
+// Only auto-run when executed as a CLI entrypoint, not when imported (e.g. tests).
+const isEntrypoint = (() => {
+  try {
+    const entry = process.argv[1];
+    if (!entry) return false;
+    return pathToFileURL(entry).href === import.meta.url;
+  } catch {
+    return false;
+  }
+})();
 
+if (isEntrypoint) {
+  main().catch((err) => {
+    console.error(`\n❌ start-wizard failed: ${err?.message ?? err}\n`);
+    process.exit(1);
+  });
+}
