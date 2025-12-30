@@ -5,7 +5,6 @@ import type {
 } from '@timothymwt/start-wizard-core';
 
 declare global {
-  // eslint-disable-next-line no-var
   var __SW_TEST_EVENTS: string[] | undefined;
 }
 
