@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   collectPortConflicts,
@@ -622,7 +622,12 @@ const isEntrypoint = (() => {
   try {
     const entry = process.argv[1];
     if (!entry) return false;
-    return pathToFileURL(entry).href === import.meta.url;
+
+    // `npm` uses a symlink in `node_modules/.bin`. Compare real paths so running
+    // `./node_modules/.bin/start-wizard` still counts as the entrypoint.
+    const entryReal = fs.realpathSync(entry);
+    const selfReal = fs.realpathSync(fileURLToPath(import.meta.url));
+    return entryReal === selfReal;
   } catch {
     return false;
   }
