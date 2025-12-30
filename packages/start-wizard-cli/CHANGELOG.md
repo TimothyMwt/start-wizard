@@ -1,5 +1,11 @@
 # @timothymwt/start-wizard-cli
 
+## 0.1.2
+
+### Patch Changes
+
+- 2734233: Fix CLI entrypoint detection so `start-wizard` runs correctly when invoked via the `node_modules/.bin` symlink.
+
 ## 0.1.1
 
 ### Patch Changes
