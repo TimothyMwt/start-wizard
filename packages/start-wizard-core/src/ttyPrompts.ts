@@ -63,16 +63,53 @@ export async function selectPrompt({
     defaultIndex >= 0 && defaultIndex < options.length ? defaultIndex : 0;
   let selectedIndex = normalizedDefaultIndex;
 
+  // Important: readline-based prompts (like `inputPrompt`) can leave stdin paused after `rl.close()`.
+  // If stdin remains paused, no keypress events will fire and the process may appear to “drop back”
+  // to the shell immediately after rendering.
+  const wasPaused =
+    typeof process.stdin.isPaused === 'function' ? process.stdin.isPaused() : false;
+  const wasRaw = (process.stdin as unknown as { isRaw?: boolean }).isRaw;
+
   readline.emitKeypressEvents(process.stdin);
   process.stdin.setRawMode(true);
+  if (wasPaused) process.stdin.resume();
+
+  const onKeypress = (_str: string, key: readline.Key) => {
+    if (!key) return;
+    if (key.name === 'up') {
+      selectedIndex = (selectedIndex - 1 + options.length) % options.length;
+    } else if (key.name === 'down') {
+      selectedIndex = (selectedIndex + 1) % options.length;
+    } else if (key.name === 'return') {
+      resolvePromise(options[selectedIndex] ?? null);
+      return;
+    } else if (key.name === 'c' && key.ctrl) {
+      process.exitCode = 130;
+      resolvePromise(null);
+      return;
+    } else {
+      return;
+    }
+
+    clearScreen();
+    process.stdout.write(
+      `${renderSelect({ title, options, selectedIndex, hint })}\n`
+    );
+  };
+
+  let resolvePromise: (value: SelectPromptOption | null) => void = () => {
+    // replaced before use
+  };
 
   const cleanup = () => {
     try {
-      process.stdin.setRawMode(false);
+      if (wasRaw === true) process.stdin.setRawMode(true);
+      else process.stdin.setRawMode(false);
     } catch {
       // ignore
     }
-    process.stdin.removeAllListeners('keypress');
+    process.stdin.removeListener('keypress', onKeypress);
+    if (wasPaused) process.stdin.pause();
   };
 
   try {
@@ -82,28 +119,8 @@ export async function selectPrompt({
     );
 
     return await new Promise((resolve) => {
-      process.stdin.on('keypress', (_str, key) => {
-        if (!key) return;
-        if (key.name === 'up') {
-          selectedIndex = (selectedIndex - 1 + options.length) % options.length;
-        } else if (key.name === 'down') {
-          selectedIndex = (selectedIndex + 1) % options.length;
-        } else if (key.name === 'return') {
-          resolve(options[selectedIndex] ?? null);
-          return;
-        } else if (key.name === 'c' && key.ctrl) {
-          process.exitCode = 130;
-          resolve(null);
-          return;
-        } else {
-          return;
-        }
-
-        clearScreen();
-        process.stdout.write(
-          `${renderSelect({ title, options, selectedIndex, hint })}\n`
-        );
-      });
+      resolvePromise = resolve;
+      process.stdin.on('keypress', onKeypress);
     });
   } finally {
     cleanup();

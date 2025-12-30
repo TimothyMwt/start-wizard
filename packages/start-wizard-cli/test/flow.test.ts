@@ -21,7 +21,9 @@ vi.mock('@timothymwt/start-wizard-core', async () => {
     ...actual,
     defineConfig: (raw: unknown) => raw as StartWizardConfig,
     ensureInstall: vi.fn(async () => {}),
-    enforceProdGuard: vi.fn(async (args: { allowProd?: boolean }) => args.allowProd ?? false),
+    enforceProdGuard: vi.fn(
+      async (args: { allowProd?: boolean }) => args.allowProd ?? false
+    ),
     collectPortConflicts: vi.fn(async (plan: StartWizardPortPlanEntry[]) => {
       const ports = plan.map((p) => p.port);
       collectCalls.push(ports);
@@ -34,11 +36,13 @@ vi.mock('@timothymwt/start-wizard-core', async () => {
         listeners: [{ pid: 123, command: 'test' }],
       }));
     }),
-    resolvePortConflictsInteractively: vi.fn(async (args: { conflicts?: Array<{ port: number }> }) => {
-      const ports = (args.conflicts ?? []).map((c) => c.port);
-      resolveCalls.push(ports);
-      events.push(`resolve:${ports.join(',')}`);
-    }),
+    resolvePortConflictsInteractively: vi.fn(
+      async (args: { conflicts?: Array<{ port: number }> }) => {
+        const ports = (args.conflicts ?? []).map((c) => c.port);
+        resolveCalls.push(ports);
+        events.push(`resolve:${ports.join(',')}`);
+      }
+    ),
     // Avoid real TTY prompting in tests.
     selectPrompt: vi.fn(async () => {
       throw new Error('selectPrompt should not be called in this test');
