@@ -1,4 +1,13 @@
 import { describe, expect, test, vi } from 'vitest';
+import type {
+  StartWizardConfig,
+  StartWizardPortPlanEntry,
+} from '@timothymwt/start-wizard-core';
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __SW_TEST_EVENTS: string[] | undefined;
+}
 
 const events: string[] = [];
 const collectCalls: number[][] = [];
@@ -11,23 +20,23 @@ vi.mock('@timothymwt/start-wizard-core', async () => {
 
   return {
     ...actual,
-    defineConfig: (raw: unknown) => raw as any,
+    defineConfig: (raw: unknown) => raw as StartWizardConfig,
     ensureInstall: vi.fn(async () => {}),
-    enforceProdGuard: vi.fn(async ({ allowProd }: any) => allowProd ?? false),
-    collectPortConflicts: vi.fn(async (plan: any[]) => {
+    enforceProdGuard: vi.fn(async (args: { allowProd?: boolean }) => args.allowProd ?? false),
+    collectPortConflicts: vi.fn(async (plan: StartWizardPortPlanEntry[]) => {
       const ports = plan.map((p) => p.port);
       collectCalls.push(ports);
       events.push(`collect:${ports.join(',')}`);
       // Return a fake conflict per plan so resolve can distinguish calls.
-      return ports.map((port: number) => ({
+      return ports.map((port) => ({
         port,
         desiredService: 'test',
         flexible: false,
         listeners: [{ pid: 123, command: 'test' }],
       }));
     }),
-    resolvePortConflictsInteractively: vi.fn(async ({ conflicts }: any) => {
-      const ports = (conflicts ?? []).map((c: any) => c.port);
+    resolvePortConflictsInteractively: vi.fn(async (args: { conflicts?: Array<{ port: number }> }) => {
+      const ports = (args.conflicts ?? []).map((c) => c.port);
       resolveCalls.push(ports);
       events.push(`resolve:${ports.join(',')}`);
     }),
@@ -115,7 +124,7 @@ describe('start-wizard-cli flow', () => {
     );
 
     try {
-      (globalThis as any).__SW_TEST_EVENTS = events;
+      globalThis.__SW_TEST_EVENTS = events;
       await runStartWizard({
         cwd: tmpDir,
         argv: [
@@ -129,7 +138,7 @@ describe('start-wizard-cli flow', () => {
         ],
       });
     } finally {
-      delete (globalThis as any).__SW_TEST_EVENTS;
+      delete globalThis.__SW_TEST_EVENTS;
     }
 
     // Ensure local stack ports are excluded from *product* conflict checking.
